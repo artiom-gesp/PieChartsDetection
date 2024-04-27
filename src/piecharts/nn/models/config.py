@@ -16,3 +16,4 @@ class TrainConfig(BaseModel):
     freeze_encoder: bool = Field(True)
     model: ModelConfig = Field(default_factory=ModelConfig)
     epochs: int = Field(100)
+    loss: str = Field("crossentropy")

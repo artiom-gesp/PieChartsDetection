@@ -36,7 +36,7 @@ def main() -> None:
     with (model_dir / "config.json").open("w", encoding="utf8") as f:
         f.write(json_config)
 
-    train(model, train_dataloader, val_dataloader, writer, config.epochs, model_dir=model_dir, lr=config.lr)
+    train(model, train_dataloader, val_dataloader, writer, config.epochs, model_dir=model_dir, lr=config.lr, loss=config.loss)
 
 
 if __name__ == "__main__":

@@ -8,3 +8,4 @@ lr: 0.001
 resolution: [256, 256]
 freeze_encoder: True
 epochs: 100
+loss: focal
