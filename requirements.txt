@@ -4,3 +4,4 @@ jaxtyping
 torchvision
 segmentation-models-pytorch
 tensorboard
+pydantic

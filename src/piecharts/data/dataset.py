@@ -57,12 +57,12 @@ class PiechartDataset(Dataset):
 
             mask = generate_mask(image.shape[1:], self.dataframe.sectors[index])
 
-            if mask.shape[1] <= self.resolution[0] or mask.shape[2] <= self.resolution[1]:
-                scale = max((self.resolution[0] + 1) / mask.shape[1], (self.resolution[1] + 1) / mask.shape[2])
-                image = torch.nn.functional.interpolate(image[None], scale_factor=scale, mode="bicubic")[0]
-                mask = torch.nn.functional.interpolate(mask[None], scale_factor=scale, mode="nearest-exact")[0]
-
             if self.resolution is not None:
+                if mask.shape[1] <= self.resolution[0] or mask.shape[2] <= self.resolution[1]:
+                    scale = max((self.resolution[0] + 1) / mask.shape[1], (self.resolution[1] + 1) / mask.shape[2])
+                    image = torch.nn.functional.interpolate(image[None], scale_factor=scale, mode="bicubic")[0]
+                    mask = torch.nn.functional.interpolate(mask[None], scale_factor=scale, mode="nearest-exact")[0]
+
                 x_start = torch.randint(0, int(mask.shape[1] - self.resolution[0] + 1), (1,))
                 y_start = torch.randint(0, int(mask.shape[2] - self.resolution[1] + 1), (1,))
                 image = image[:, x_start : x_start + self.resolution[0], y_start : y_start + self.resolution[1]]

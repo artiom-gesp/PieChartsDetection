@@ -1,3 +1,4 @@
+from pathlib import Path
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
@@ -5,10 +6,10 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 
-def train(model: nn.Module, train_data_loader: DataLoader, val_data_loader: DataLoader, writer: SummaryWriter, epochs: int):
-    optimizer = torch.optim.Adam(model.parameters())
+def train(model: nn.Module, train_data_loader: DataLoader, val_data_loader: DataLoader, writer: SummaryWriter, epochs: int, model_dir: Path, lr: float):
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     loss_fn = torch.nn.CrossEntropyLoss()
-
+    model_dir.mkdir(parents=True, exist_ok=True)
     model.cuda()
     min_validation = torch.inf
 
@@ -41,8 +42,8 @@ def train(model: nn.Module, train_data_loader: DataLoader, val_data_loader: Data
             val_loss /= len(val_data_loader)
             if val_loss < min_validation:
                 min_validation = val_loss
-                torch.save(model.state_dict(), f"models/best.h5")
-                torch.save(model.state_dict(), f"models/epoch{epoch}.h5")
+                torch.save(model.state_dict(), model_dir / f"best.h5")
+                torch.save(model.state_dict(), model_dir / f"epoch{epoch}.h5")
 
             print("Validation loss " + str(val_loss))
             writer.flush()

@@ -3,6 +3,8 @@
 /models/
 /tensorboard/
 *.png
+/model*
+/tensorboard*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
