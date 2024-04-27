@@ -20,7 +20,7 @@ def main() -> None:
         yaml = YAML().load(infile)
         config = TrainConfig.model_validate(yaml)
 
-    name = f"model_arch-{config.model.architecture}_encoder_{config.model.encoder_name}_freeze-{config.freeze_encoder}_center-{config.model.use_center_pool}"
+    name = f"model_arch-{config.model.architecture}_encoder_{config.model.encoder_name}_freeze-{config.freeze_encoder}_center-{config.model.use_center_pool}_loss-{config.loss}"
 
     model = PSMModel(freeze_encoder=config.freeze_encoder, config=config.model)
     train_dataset = PiechartDataset(Path("data") / "raw", "train", "train", (256, 256))
