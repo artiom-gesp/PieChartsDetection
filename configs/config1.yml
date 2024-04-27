@@ -1,0 +1,11 @@
+model:
+  architecture: unet
+  encoder_name: resnet34
+  use_center_pool: True
+
+batch_size: 32
+lr: 0.001
+resolution: [256, 256]
+freeze_encoder: True
+epochs: 100
+loss: focal
