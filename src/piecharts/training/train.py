@@ -90,12 +90,13 @@ def plot_confusion_matrix(confusion_matrix: torchmetrics.classification.Multicla
     buffer.close()
 
 
-def focal_loss(preds, gt):  # type: ignore
-    pos_inds = gt.gt(0.5)
-    neg_inds = gt.le(0.5)
+def focal_loss(preds, gt):
+    pos_inds = gt.eq(1)
+    neg_inds = gt.lt(1)
 
     neg_weights = torch.pow(1 - gt[neg_inds], 4)
 
+    loss = 0
     preds_soft = F.softmax(preds, dim=1)
     pos_pred = preds_soft[pos_inds]
     neg_pred = preds_soft[neg_inds]
@@ -103,10 +104,10 @@ def focal_loss(preds, gt):  # type: ignore
     pos_loss = torch.log(pos_pred) * torch.pow(1 - pos_pred, 2)
     neg_loss = torch.log(1 - neg_pred) * torch.pow(neg_pred, 2) * neg_weights
 
-    num_pos = pos_inds.float().sum()
+    num_pos  = pos_inds.float().sum()
     pos_loss = pos_loss.sum()
     neg_loss = neg_loss.sum()
-    loss = 0
+
     if pos_pred.nelement() == 0:
         loss = loss - neg_loss
     else:
