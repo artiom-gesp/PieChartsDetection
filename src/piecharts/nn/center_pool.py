@@ -1,22 +1,29 @@
-import torch
-import torch.nn as nn
+from torch import nn
+from _cpools import BottomPool, LeftPool, RightPool, TopPool
 
-from _cpools import TopPool, BottomPool, LeftPool, RightPool
 
 class ConvolutionalBlock(nn.Module):
     def __init__(self, k, inp_dim, out_dim, stride=1, with_bn=True):
         super(ConvolutionalBlock, self).__init__()
 
         pad = (k - 1) // 2
-        self.conv = nn.Conv2d(inp_dim, out_dim, (k, k), padding=(pad, pad), stride=(stride, stride), bias=not with_bn)
-        self.bn   = nn.BatchNorm2d(out_dim) if with_bn else nn.Sequential()
+        self.conv = nn.Conv2d(
+            inp_dim,
+            out_dim,
+            (k, k),
+            padding=(pad, pad),
+            stride=(stride, stride),
+            bias=not with_bn,
+        )
+        self.bn = nn.BatchNorm2d(out_dim) if with_bn else nn.Sequential()
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
         conv = self.conv(x)
-        bn   = self.bn(conv)
+        bn = self.bn(conv)
         relu = self.relu(bn)
-        return relu    
+        return relu
+
 
 class CrossPoolingLayer(nn.Module):
     def __init__(self, dim, pool1, pool2, pool3, pool4):
@@ -63,13 +70,6 @@ class CrossPoolingLayer(nn.Module):
 
 class CenterPoolingLayer(CrossPoolingLayer):
     def __init__(self, dim):
-        super(CenterPoolingLayer, self).__init__(dim, TopPool, LeftPool, BottomPool, RightPool)
-
-
-def make_ct_layer(dim):
-    return CenterPoolingLayer(dim)
-
-if __name__ == '__main__':
-    a = make_ct_layer(128).to('cuda')
-    input = torch.zeros(1, 128, 4,4).cuda()
-    a(input)
+        super(CenterPoolingLayer, self).__init__(
+            dim, TopPool, LeftPool, BottomPool, RightPool
+        )
