@@ -105,11 +105,12 @@ def focal_loss(preds, gt):
     neg_loss = torch.log(1 - neg_pred) * torch.pow(neg_pred, 2) * neg_weights
 
     num_pos  = pos_inds.float().sum()
+    num_neg = neg_inds.float().sum()
     pos_loss = pos_loss.sum()
     neg_loss = neg_loss.sum()
 
     if pos_pred.nelement() == 0:
-        loss = loss - neg_loss
+        loss = loss - neg_loss / num_neg
     else:
         loss = loss - (pos_loss + neg_loss) / num_pos
     return loss
