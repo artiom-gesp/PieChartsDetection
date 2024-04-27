@@ -10,6 +10,7 @@ from math import pi
 import time
 import os
 from utils import find_edges, load_image, cv2_show
+import json
 
 
 @numba.njit(fastmath=True)
@@ -43,7 +44,64 @@ def find_circle(edges, xs, ys, rs, step):
     return scores, scores_regularized
     
 
+@numba.njit(fastmath=True)
+def compute_score_arc(edges, x, y, r, step):
+    if x < r or x + r >= edges.shape[0] or y < r or y + r >= edges.shape[1]: return 0, (0, 0)
 
+    samples = int(2 * pi * r)
+    score = 0.0
+    angles = np.linspace(0, 2 * pi * (1-samples)/samples, samples)
+    measurements = np.zeros((samples,), np.float32)
+
+    for i in range(samples):
+        angle = angles[i]
+        s, c = np.sin(angle), np.cos(angle)
+        e = 0.0
+        for curr in np.linspace(max(0, r - step), r + step, int(step + max(step, r))):
+            curx, cury = int(x+s*curr), int(y+c*curr)
+            if curx < 0 or cury < 0 or curx >= edges.shape[0] or cury >= edges.shape[1]:
+                break
+            e = max(e, edges[curx, cury])
+        measurements[i] = e
+
+    csum = np.cumsum(measurements / 255.0)
+    
+    best_a_b = None
+    best_dif = 0
+    best_score = 0
+
+    for a in range(samples):
+        for b in range(samples):
+            if a == b: continue
+            if b > a:
+                dif = (b-a)
+                # forward measure
+                score = (csum[b] - csum[a]) / dif
+            else:
+                dif = (samples-a+b)
+                score = (csum[-1] - csum[a] + csum[b]) / dif
+            dif /= samples
+
+            if score == 1.0 and dif > best_dif:
+                best_dif = dif
+                best_a_b = (a / samples, b / samples)
+                best_score = score
+    return (best_score, best_a_b) if best_dif > 0.4 else (0, (0, 0))
+
+
+
+@numba.njit(parallel=True)
+def find_arc(edges, xs, ys, rs, step):
+    maxr = np.max(rs)
+    ab_s = np.zeros((xs.shape[0], 2), np.float32)
+    scores = np.zeros_like(xs, np.float32)
+    scores_regularized = np.zeros_like(xs, np.float32)
+    for i in numba.prange(len(xs)):
+        score, ab = compute_score_arc(edges, xs[i], ys[i], rs[i], step)
+        scores[i] = score 
+        scores_regularized[i] = scores[i] + rs[i] / maxr * radius_regularization_k
+        ab_s[i] = ab
+    return scores, scores_regularized, ab_s
 
 
 
@@ -62,9 +120,8 @@ stop_on_fail = False
 failed_threshold = 0.9
 
 
-ITERATION_50, ITERATION_500, ITERATION_ARCS = 0, 1, 2
 
-
+VARIANT_CIRCLE, VARIANT_ARC = 0, 1
 
 
 
@@ -82,12 +139,10 @@ def preview_circles(img, x, y, r):
 
 
 
-def compute_bounding_arcs(original_image, edges):
-    return 0, 0, 1, 0
+STEP_CIRCLE_FIRST, STEP_CIRCLE_SECOND, STEP_ARC = 0, 1, 2
 
-def compute_bounding_circle(original_image, edges, iteration):
+def compute_bounding_circle(original_image, edges, step_images, variant, step_name):
     step = 20
-    step_images = 50 if iteration == ITERATION_50 else 500
 
     xs, ys, rs = np.meshgrid(range(0, edges.shape[0], step), range(0, edges.shape[1], step), range(50, max(edges.shape[0], edges.shape[1]) // 2, step))
     
@@ -96,9 +151,15 @@ def compute_bounding_circle(original_image, edges, iteration):
     ys = ys.ravel()
     rs = rs.ravel()
 
-    for _ in range(6):
-        scores, scores_regularized = find_circle(edges, xs, ys, rs, step)
-        
+    steps = 13 if variant == VARIANT_ARC else 6
+    convergence_k = 1.25 if variant == VARIANT_ARC else 1.5
+
+    for _ in range(steps):
+        if variant == VARIANT_CIRCLE:
+            scores, scores_regularized = find_circle(edges, xs, ys, rs, step)
+        else:
+            scores, scores_regularized, ab_s = find_arc(edges, xs, ys, rs, step)
+            
         best_is = np.argsort(scores_regularized)[::-1]
 
         best_is = best_is[:step_images]
@@ -111,7 +172,7 @@ def compute_bounding_circle(original_image, edges, iteration):
         for j in best_is:
             new_xs = [xs[j] - step/2, xs[j] + step/2]
             new_ys = [ys[j] - step/2, ys[j] + step/2]
-            new_rs = [rs[j]-step/2, rs[j] + step/2]
+            new_rs = [rs[j] - step/2, rs[j] + step/2]
 
             a, b, c = np.meshgrid(new_xs, new_ys, new_rs)
             a_ = np.concatenate([a_, a.ravel()])
@@ -122,7 +183,7 @@ def compute_bounding_circle(original_image, edges, iteration):
         ys = np.array(b_)
         rs = np.array(c_)
         
-        step /= 1.5
+        step /= convergence_k
 
     best_i = best_is[0]
     best_score = scores[best_i]
@@ -134,25 +195,33 @@ def compute_bounding_circle(original_image, edges, iteration):
     
     if failed:
         print (f"Immediate method failed, trying more advanced version!")
-        if iteration == ITERATION_50:
-            return compute_bounding_circle(original_image, edges, ITERATION_500)
-        if iteration == ITERATION_500:
-            return compute_bounding_arcs(original_image, edges)
+        if step_name == STEP_CIRCLE_FIRST:
+            return compute_bounding_circle(original_image, edges, 500, VARIANT_CIRCLE, STEP_CIRCLE_SECOND)
+        if step_name == STEP_CIRCLE_SECOND:
+            return compute_bounding_circle(original_image, edges, 1000, VARIANT_ARC, STEP_ARC)
+        return 0, 0, 1, 0, 0
 
-    return (xs[best_i], ys[best_i], rs[best_i], best_score)
+    return (xs[best_i], ys[best_i], rs[best_i], best_score, ab_s[best_i] if variant==VARIANT_ARC else None)
 
 
-skip = 18170
+circle_params_dict = {}
+
+with open("circle_params_dict.json") as file:
+    circle_params_dict = json.load(file)
+
+# ... dataset backup.
+# stable_dataset = glob.glob("think-cell-datathon/images/images_processed/*")
+# with open("stable_dataset_list2222.txt", "w") as backup_file:
+#     backup_file.write("\n".join(stable_dataset))
+
 for img_index, img_fname in enumerate(image_list):
-    if img_index < skip: continue
+    img_base_name = img_fname.split("\\")[-1]
+
     target_fname = img_fname.replace("images/images", target_folder)
     if os.path.exists(target_fname):
         print (f"Skipping {img_index}")
         continue
 
-    #if not 'chart_16685' in img_fname: continue
-    #if not 'chart_16281' in img_fname: continue
-    #if not 'chart_15872' in img_fname: continue
     # img = np.average(skimage.io.imread(img_fname), 2)
     # edge_sobel = filters.sobel(img)
 
@@ -171,8 +240,10 @@ for img_index, img_fname in enumerate(image_list):
         cv2.waitKey(0)
 
     
-    x, y, r, score = compute_bounding_circle(original_image, edges, ITERATION_50)
+    x, y, r, score, ab_ =  compute_bounding_circle(original_image, edges, 50, VARIANT_CIRCLE, STEP_CIRCLE_FIRST)
     
+    circle_params_dict[img_base_name] = (x, y, r)
+
     if score < failed_threshold:
         print (f"Failed on image {img_fname}!")
         failed_images.append(img_fname)
@@ -185,6 +256,10 @@ for img_index, img_fname in enumerate(image_list):
     print (f"Done {img_index+1:0000}/{len(image_list)}, {img_fname}, Best score={score}")
     #plt_scores = scores.reshape(ms_shape)
 
+    # if ab_ is not None:
+    #     print(f"AB={ab_}. Not saving.")
+    #     preview_circle(original_image, x, y, r)
+    #     continue
 
     
     #edges = cv2.Canny(thresh, 100, 200)
@@ -214,5 +289,6 @@ for img_index, img_fname in enumerate(image_list):
     #    axs[i // 6, i % 6].imshow(plt_scores[..., i].T)
     #plt.show()
 
-    
+with open("circle_params_dict.json", "w") as file:
+    json.dump(circle_params_dict, file)  
 
