@@ -5,3 +5,7 @@ torchvision
 segmentation-models-pytorch
 tensorboard
 pydantic
+ruamel-yaml
+torchmetrics
+scikit-learn
+matplotlib

@@ -6,24 +6,26 @@ import torch
 from jaxtyping import Float
 from torch import nn
 
+from piecharts.nn.models.config import ModelConfig
+
 
 class PSMModel(nn.Module):
     base: nn.Module
     preprocessing_function: partial
     center_pool: Optional[nn.Module] = None
 
-    def __init__(self, use_center_pool: bool, arch: str = "unet", encoder_name: str = "resnet34", freeze_encoder: bool = True, **kwargs) -> None:
+    def __init__(self, config: ModelConfig, freeze_encoder: bool, **kwargs: str) -> None:
         super().__init__()
 
-        self.base = smp.create_model(arch, classes=3, **kwargs)
-        self.preprocessing_function = smp.encoders.get_preprocessing_fn(encoder_name)
+        self.base = smp.create_model(config.architecture, classes=3, **kwargs)
+        self.preprocessing_function = smp.encoders.get_preprocessing_fn(config.encoder_name)
 
         if freeze_encoder:
             for param in self.base.encoder.parameters():
                 param.requires_grad = False
 
         dim = kwargs["decoder_channels"][-1] if "decoder_channels" in kwargs else 16
-        if use_center_pool:
+        if config.use_center_pool:
             from piecharts.nn.layers.center_pool import CenterPoolingLayer
 
             self.center_pool = CenterPoolingLayer(dim)
