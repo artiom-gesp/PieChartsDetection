@@ -7,7 +7,7 @@ from piecharts.data.dataset import PiechartDataset
 from piecharts.nn.models.smp_models import PSMModel
 from piecharts.training.train import train
 
-BATCH_SIZE = 16
+BATCH_SIZE = 32
 def main():
     model = PSMModel(True)
     train_dataset = PiechartDataset(Path("data") / "raw", "train", "train", (256, 256))
