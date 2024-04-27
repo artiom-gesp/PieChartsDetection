@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from ._cpools import TopPool, BottomPool, LeftPool, RightPool
+from _cpools import TopPool, BottomPool, LeftPool, RightPool
 
 class ConvolutionalBlock(nn.Module):
     def __init__(self, k, inp_dim, out_dim, stride=1, with_bn=True):
@@ -68,3 +68,8 @@ class CenterPoolingLayer(CrossPoolingLayer):
 
 def make_ct_layer(dim):
     return CenterPoolingLayer(dim)
+
+if __name__ == '__main__':
+    a = make_ct_layer(128).to('cuda')
+    input = torch.zeros(1, 128, 4,4).cuda()
+    a(input)
