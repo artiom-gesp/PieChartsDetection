@@ -18,6 +18,9 @@ class PSMModel(nn.Module):
         self.base = smp.create_model(arch, classes=3, **kwargs)
         self.preprocessing_function = smp.encoders.get_preprocessing_fn(encoder_name)
 
+        for param in self.base.encoder.parameters():
+            param.requires_grad = False
+
         dim = kwargs["decoder_channels"][-1] if "decoder_channels" in kwargs else 16
         if use_center_pool:
             from piecharts.nn.layers.center_pool import CenterPoolingLayer
