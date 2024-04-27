@@ -18,15 +18,17 @@ class PiechartDataset(Dataset):
     split: str
     seeds: Optional[Int[torch.Tensor, "N"]] = None
 
-    def __init__(self, directory: Path, split: Literal["train", "val_and_test"], train_split: Literal['train', 'val'], resolution: Optional[Tuple[int, int]] = None):
+    def __init__(
+        self, directory: Path, split: Literal["train", "val_and_test"], train_split: Literal["train", "val"], resolution: Optional[Tuple[int, int]] = None
+    ):
         self.dataframe = pd.read_csv(directory / f"{split}.csv")
-        if split == 'train':
-            if train_split == 'train':
-                self.dataframe = self.dataframe.iloc[:8000]
+        if split == "train":
+            if train_split == "train":
+                self.dataframe = self.dataframe.iloc[:8000].reset_index(drop=True)
             else:
-                self.dataframe = self.dataframe.iloc[8000:]
+                self.dataframe = self.dataframe.iloc[8000:].reset_index(drop=True)
 
-        if split == 'val_and_test' or train_split == 'val':
+        if split == "val_and_test" or train_split == "val":
             self.seeds = torch.randint(0, 1000, (len(self.dataframe),))
 
         list_data_features = [
@@ -56,7 +58,7 @@ class PiechartDataset(Dataset):
             mask = generate_mask(image.shape[1:], self.dataframe.sectors[index])
 
             if mask.shape[1] <= self.resolution[0] or mask.shape[2] <= self.resolution[1]:
-                scale = max(self.resolution[0] / mask.shape[1], self.resolution[1] / mask.shape[2])
+                scale = max((self.resolution[0] + 1) / mask.shape[1], (self.resolution[1] + 1) / mask.shape[2])
                 image = torch.nn.functional.interpolate(image[None], scale_factor=scale, mode="bicubic")[0]
                 mask = torch.nn.functional.interpolate(mask[None], scale_factor=scale, mode="nearest-exact")[0]
 
@@ -72,7 +74,7 @@ class PiechartDataset(Dataset):
 def generate_mask(resolution: Tuple[int, int], sectors: List[Sector]) -> Float[torch.Tensor, "3 X Y"]:
     mask = torch.zeros((3, *resolution))
 
-    kernel_size = (5,5)
+    kernel_size = (5, 5)
     sigma = 1
     kernel = gaussian_kernel(kernel_size, sigma)
     pad_size = (kernel_size[0] // 2, kernel_size[1] // 2)
@@ -92,16 +94,15 @@ def generate_mask(resolution: Tuple[int, int], sectors: List[Sector]) -> Float[t
 
     mask = torch.clamp(mask, 0, 1)
 
-    mask[0:1] += (1 - mask.sum(dim=0, keepdim=True))  # Ensure sum over channels is 1
-    print(mask.shape)
+    mask[0:1] += 1 - mask.sum(dim=0, keepdim=True)  # Ensure sum over channels is 1
     return mask
 
-def gaussian_kernel(size: Tuple[int,int] = (5,5), sigma: float = 2.) -> Float[torch.Tensor, "N N"]:
-    m, n = size
-    y, x = torch.meshgrid(torch.arange(m), torch.arange(n), indexing='ij')
-    y0, x0 = m // 2, n // 2
-    return torch.exp(-((x - x0)**2 + (y - y0)**2) / (2 * sigma**2))
 
+def gaussian_kernel(size: Tuple[int, int] = (5, 5), sigma: float = 2.0) -> Float[torch.Tensor, "N N"]:
+    m, n = size
+    y, x = torch.meshgrid(torch.arange(m), torch.arange(n), indexing="ij")
+    y0, x0 = m // 2, n // 2
+    return torch.exp(-((x - x0) ** 2 + (y - y0) ** 2) / (2 * sigma**2))
 
 
 if __name__ == "__main__":

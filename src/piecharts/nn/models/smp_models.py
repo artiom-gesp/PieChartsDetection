@@ -28,9 +28,8 @@ class PSMModel(nn.Module):
             self.center_pool = CenterPoolingLayer(dim)
 
     def forward(self, x: Float[torch.Tensor, "B 3 X Y"]) -> Float[torch.Tensor, "B 3 X Y"]:
-        x = self.preprocessing_function(x)
-        x = self.base.encoder(x)
-        x = self.base.decoder(x)
+        features = self.base.encoder(x)
+        x = self.base.decoder(*features)
         if self.center_pool:
             x = self.center_pool(x)
         return self.base.segmentation_head(x)

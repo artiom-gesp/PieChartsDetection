@@ -3,3 +3,4 @@ pandas
 jaxtyping
 torchvision
 segmentation-models-pytorch
+tensorboard
