@@ -39,8 +39,8 @@ def train(model: nn.Module, train_data_loader: DataLoader, val_data_loader: Data
                     val_loss += loss.item()
                 writer.add_scalar("Validation loss", val_loss, epoch)
 
-            if val_loss.item() < min_validation:
-                min_validation = val_loss.item()
+            if val_loss < min_validation:
+                min_validation = val_loss
                 torch.save(model.state_dict(), f"models/best.h5")
                 torch.save(model.state_dict(), f"models/epoch{epoch}.h5")
 
