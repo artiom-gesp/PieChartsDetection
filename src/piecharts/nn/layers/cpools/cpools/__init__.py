@@ -1,11 +1,10 @@
-import torch
-
+import bottom_pool
+import left_pool
+import right_pool
+import top_pool
 from torch import nn
 from torch.autograd import Function
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__),'dist/cpools-0.0.0-py3.6-linux-x86_64.egg'))
-import top_pool, bottom_pool, left_pool, right_pool
+
 
 class TopPoolFunction(Function):
     @staticmethod
@@ -16,9 +15,10 @@ class TopPoolFunction(Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        input  = ctx.saved_variables[0]
+        input = ctx.saved_variables[0]
         output = top_pool.backward(input, grad_output)[0]
         return output
+
 
 class BottomPoolFunction(Function):
     @staticmethod
@@ -29,9 +29,10 @@ class BottomPoolFunction(Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        input  = ctx.saved_variables[0]
+        input = ctx.saved_variables[0]
         output = bottom_pool.backward(input, grad_output)[0]
         return output
+
 
 class LeftPoolFunction(Function):
     @staticmethod
@@ -42,9 +43,10 @@ class LeftPoolFunction(Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        input  = ctx.saved_variables[0]
+        input = ctx.saved_variables[0]
         output = left_pool.backward(input, grad_output)[0]
         return output
+
 
 class RightPoolFunction(Function):
     @staticmethod
@@ -55,21 +57,25 @@ class RightPoolFunction(Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        input  = ctx.saved_variables[0]
+        input = ctx.saved_variables[0]
         output = right_pool.backward(input, grad_output)[0]
         return output
+
 
 class TopPool(nn.Module):
     def forward(self, x):
         return TopPoolFunction.apply(x)
 
+
 class BottomPool(nn.Module):
     def forward(self, x):
         return BottomPoolFunction.apply(x)
 
+
 class LeftPool(nn.Module):
     def forward(self, x):
         return LeftPoolFunction.apply(x)
+
 
 class RightPool(nn.Module):
     def forward(self, x):

@@ -1,5 +1,5 @@
 from torch import nn
-from _cpools import BottomPool, LeftPool, RightPool, TopPool
+from cpools import BottomPool, LeftPool, RightPool, TopPool  # type: ignore
 
 
 class ConvolutionalBlock(nn.Module):
