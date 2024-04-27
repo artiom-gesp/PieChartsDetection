@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["piecharts"]
+exclude = []  # exclude packages matching these glob patterns (empty by default)
+
+[project]
+name = "piecharts"
+version = "0.1.0"
+requires-python = "~=3.10"
+
+
+[tool.black]
+# 80 or 86 is not suitable for scientific code IMO
+line-length = 160
+target-version = ['py310']
+preview = true
+
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length = 160
+disable = """
+    invalid-name,
+    not-callable
+"""
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+ignore_missing_imports = true
+# Below is incompatible with jaxtyping (e.g. Float[Array, " N"]).
+# Hopefully, other tools should catch undefined names.
+disable_error_code = ["name-defined", "var-annotated"]
+plugins = [
+  "pydantic.mypy",
+]
+
+[[tool.mypy.overrides]]
+module = "torch.*"
+allow_untyped_calls = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
