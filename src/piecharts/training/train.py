@@ -27,7 +27,7 @@ def train(
     model.cuda()
     min_validation = torch.inf
     confusion_matrix = torchmetrics.classification.MulticlassConfusionMatrix(num_classes=3, normalize="true").cuda()
-    f1_score = torchmetrics.classification.MulticlassF1Score(num_classes=3)
+    f1_score = torchmetrics.classification.MulticlassF1Score(num_classes=3).cuda()
 
     for epoch in range(epochs):
         epoch_loss = 0
