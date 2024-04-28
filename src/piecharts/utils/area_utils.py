@@ -97,13 +97,10 @@ def sector_area(start, end):
     start_x, start_y = start
     end_x, end_y = end
 
-    r = np.sqrt((start_x)**2 + (start_y)**2)
 
     angle = angle_between(start, end)
 
-    area = (angle / (2 * np.pi)) * np.pi * r**2
-
-    return area
+    return angle
 
 
 def cross(a):
@@ -127,7 +124,7 @@ def multi_center(center_points, arc_points):
     global center
     center = center_points[0]
     key_points = sorted(arc_points, key=cross, reverse=True)
-    areas = []
+    angles = []
     
     for i in range(len(key_points)):
         key_point = key_points[i]
@@ -141,10 +138,9 @@ def multi_center(center_points, arc_points):
             arcs_ = [key_points[i], key_points[(i+1)%len(key_points)]]
             
             centered_arcs_ = center_arcs(arcs_, tar_center)
-            area = sector_area(*centered_arcs_)
-            areas.append(area)
-    total_area = sum(areas)
-    percentages = [100 * area / total_area for area in areas]
+            angle = sector_area(*centered_arcs_)
+            angles.append(angle)
+    percentages = [100 * angle / (2 * np.pi) for angle in angles]
     return percentages
 
     
@@ -160,15 +156,13 @@ def arcs_to_sectors(centers, arc_points):
         clock_wise_sorted_arcs = [angle_dict[angle] for angle in sorted(angle_dict.keys())]
         clock_wise_sorted_arcs.append(top_point)
 
-        areas = []
+        angles = []
         for i in range(len(clock_wise_sorted_arcs) - 1):
 
-            area = sector_area(clock_wise_sorted_arcs[i], clock_wise_sorted_arcs[i + 1])
-            areas.append(area)
+            angle = sector_area(clock_wise_sorted_arcs[i], clock_wise_sorted_arcs[i + 1])
+            angles.append(angle)
 
-        total_area = sum(areas)
-        percentages = [100 * area / total_area for area in areas]
-
+        percentages = [100 * angle / (2 * np.pi) for angle in angles]
         return percentages
     else:
         return multi_center(centers, arc_points)
