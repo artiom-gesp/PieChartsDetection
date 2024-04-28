@@ -32,30 +32,34 @@ class PiechartDataset(Dataset):
         if split == "val_and_test" or train_split == "val":
             self.seeds = torch.randint(0, 1000, (len(self.dataframe),))
 
-        list_data_features = [
-            "boxes",
-            "start_angles",
-            "end_angles",
-            "angles",
-            "percentages",
-        ]
-        for column in list_data_features:
-            self.dataframe[column] = self.dataframe[column].apply(ast.literal_eval)
-        self.dataframe["sectors"] = self.dataframe["boxes"].apply(lambda x: [Sector(*y) for y in x])
-        # self.image_dir = directory / "images" / "images/"
-        self.image_dir = directory / "images" / "images_processed/"
+        if split == 'train':
+            list_data_features = [
+                "boxes",
+                "start_angles",
+                "end_angles",
+                "angles",
+                "percentages",
+            ]
+            for column in list_data_features:
+                self.dataframe[column] = self.dataframe[column].apply(ast.literal_eval)
+            self.dataframe["sectors"] = self.dataframe["boxes"].apply(lambda x: [Sector(*y) for y in x])
+        self.image_dir = directory / "images" / "images_processed"
         self.resolution = resolution
+        self.split = split
 
     def __len__(self):
         return len(self.dataframe)
 
-    def __getitem__(self, index: int) -> Tuple[Float[torch.Tensor, "3 X Y"], Int[torch.Tensor, "3 X Y"]]:
+    def __getitem__(self, index: int) -> Tuple[Float[torch.Tensor, "3 X Y"], Optional[Int[torch.Tensor, "3 X Y"]]]:
         with torch.random.fork_rng(enabled=self.seeds is not None):
             if self.seeds is not None:
                 torch.random.manual_seed(self.seeds[index])
 
             image_path = self.image_dir / self.dataframe.iloc[index].filename
             image = torchvision.io.read_image(image_path)[:3] / 255
+
+            if self.split != 'train':
+                return image, None
 
             mask = generate_mask(image.shape[1:], self.dataframe.sectors[index])
 
