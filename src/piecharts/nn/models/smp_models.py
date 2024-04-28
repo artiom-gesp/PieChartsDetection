@@ -36,3 +36,46 @@ class PSMModel(nn.Module):
         if self.center_pool:
             x = self.center_pool(x)
         return self.base.segmentation_head(x)
+
+
+
+
+
+class BetaModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.l1 = torch.nn.Conv2d(3, 50, 3, padding=1)
+        self.ln1 = torch.nn.BatchNorm2d(50)
+        self.down1 = torch.nn.Conv2d(50, 100, 3, stride=2, padding=1)
+        self.l2 = torch.nn.Conv2d(100, 150, 3, padding=1)
+        self.ln2 = torch.nn.BatchNorm2d(150)
+        self.down2 = torch.nn.Conv2d(150, 200, 3, stride=2, padding=1)
+        self.l3 = torch.nn.Conv2d(200, 200, 3, padding=1)
+        self.ln3 = torch.nn.BatchNorm2d(200)
+        self.l4 = torch.nn.Conv2d(200, 200, 3, padding=1) 
+        self.up1 = torch.nn.ConvTranspose2d(200, 100, 2, stride=2)
+        self.l5 = torch.nn.Conv2d(250, 100, 3, padding=1)
+        self.ln4 = torch.nn.BatchNorm2d(100)
+        self.up2 = torch.nn.ConvTranspose2d(100, 50, 2, stride=2)
+        self.l6 = torch.nn.Conv2d(100, 50, 3, padding=1)
+        self.ln5 = torch.nn.BatchNorm2d(50)
+        self.l7 = torch.nn.Conv2d(50, 3, 3, padding=1)
+
+    def forward(self, x):
+        x = torch.relu(self.ln1(self.l1(x)))
+        y = torch.relu(self.down1(x))
+        y = torch.relu(self.ln2(self.l2(y)))
+        z = torch.relu(self.down2(y))
+        z = torch.relu(self.ln3(self.l3(z)))
+        z = torch.relu(self.l4(z))
+        w = torch.relu(self.up1(z))
+        w = torch.concatenate([w, y], 1)
+        w = torch.relu(self.ln4(self.l5(w)))
+        o = torch.relu(self.up2(w))
+        o = torch.concatenate([o, x], 1)
+        p = torch.relu(self.ln5(self.l6(o)))
+        
+        return self.l7(p)
+
+
+
