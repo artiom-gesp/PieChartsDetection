@@ -22,9 +22,10 @@ class PiechartDataset(Dataset):
         self, directory: Path, split: Literal["train", "val_and_test"], train_split: Literal["train", "val"], resolution: Optional[Tuple[int, int]] = None
     ):
         self.dataframe = pd.read_csv(directory / f"{split}.csv")
+        # self.dataframe = pd.read_csv(directory / f"train_crop.csv")
         if split == "train":
             if train_split == "train":
-                self.dataframe = self.dataframe.iloc[:8000].reset_index(drop=True)
+                self.dataframe = self.dataframe.iloc[:].reset_index(drop=True)
             else:
                 self.dataframe = self.dataframe.iloc[8000:].reset_index(drop=True)
 
@@ -41,7 +42,8 @@ class PiechartDataset(Dataset):
         for column in list_data_features:
             self.dataframe[column] = self.dataframe[column].apply(ast.literal_eval)
         self.dataframe["sectors"] = self.dataframe["boxes"].apply(lambda x: [Sector(*y) for y in x])
-        self.image_dir = directory / "images" / "images"
+        # self.image_dir = directory / "images" / "images/"
+        self.image_dir = directory / "images" / "images_processed/"
         self.resolution = resolution
 
     def __len__(self):

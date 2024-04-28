@@ -6,6 +6,6 @@ model:
 batch_size: 32
 lr: 0.001
 resolution: [256, 256]
-freeze_encoder: True
+freeze_encoder: False
 epochs: 100
-loss: focal
+loss: crossentropy
