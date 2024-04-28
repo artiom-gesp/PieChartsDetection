@@ -42,9 +42,6 @@ def compute_all_radius(centers, arc_points):
     for c_x, c_y in centers:
         for p_x, p_y in arc_points:
             r_ = np.sqrt((c_x - p_x)**2 + (c_y - p_y)**2)
-            if r_ == 94.54099639838793:
-                plt.scatter(p_x, height - p_y, c='r')
-                plt.scatter(c_x, height - c_y, c='r')
             radius.append(r_)
             
     return radius
