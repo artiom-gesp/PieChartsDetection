@@ -1,7 +1,7 @@
 model:
   architecture: unet
-  encoder_name: resnet34
-  use_center_pool: True
+  encoder_name: mit_b1
+  use_center_pool: False
 
 batch_size: 32
 lr: 0.001

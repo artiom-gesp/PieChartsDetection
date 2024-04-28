@@ -25,7 +25,7 @@ def main():
 
 
     model = PSMModel(config.model, True).to(device)
-    state_dict = torch.load(dir / 'epoch22.h5')
+    state_dict = torch.load(dir / 'epoch66.h5')
     model.load_state_dict(state_dict)
     dataset = PiechartDataset(Path("./data") / "raw", "val_and_test", "val")
 
