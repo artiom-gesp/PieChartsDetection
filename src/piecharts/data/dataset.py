@@ -9,7 +9,8 @@ from jaxtyping import Float, Int
 from torch.utils.data import Dataset
 
 from piecharts.utils.datatypes import Sector
-
+import warnings
+warnings.filterwarnings("ignore")
 
 class PiechartDataset(Dataset):
     dataframe: pd.DataFrame
@@ -43,7 +44,8 @@ class PiechartDataset(Dataset):
             for column in list_data_features:
                 self.dataframe[column] = self.dataframe[column].apply(ast.literal_eval)
             self.dataframe["sectors"] = self.dataframe["boxes"].apply(lambda x: [Sector(*y) for y in x])
-        self.image_dir = directory / "images" / "images_processed"
+        self.image_dir = directory / "images" / "images"
+        # self.image_dir = directory / "images" / "images_processed"
         self.resolution = resolution
         self.split = split
 
