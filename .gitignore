@@ -6,7 +6,6 @@ failed_images.txt
 .vscode/
 /models/
 /tensorboard/
-*.png
 /model*
 /tensorboard*
 
