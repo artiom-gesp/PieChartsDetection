@@ -105,14 +105,14 @@ def find_arc(edges, xs, ys, rs, step):
 
 
 
-target_folder = "images/images_processed"
+target_folder = "images/images_processed_v2"
 
 image_list = glob.glob("think-cell-datathon/images/images/*")
 
 
 failed_images = []
 
-preview = False
+preview = True
 radius_regularization_k = 0.15
 
 stop_on_fail = False
@@ -216,7 +216,7 @@ with open("circle_params_dict.json") as file:
 
 for img_index, img_fname in enumerate(image_list):
     img_base_name = img_fname.split("\\")[-1]
-
+    
     target_fname = img_fname.replace("images/images", target_folder)
     if os.path.exists(target_fname):
         print (f"Skipping {img_index}")
@@ -245,13 +245,14 @@ for img_index, img_fname in enumerate(image_list):
     circle_params_dict[img_base_name] = (x, y, r)
 
     if score < failed_threshold:
-        print (f"Failed on image {img_fname}!")
+        print (f"Failed on image {img_fname}! Writing original.")
         failed_images.append(img_fname)
         with open("failed_images.txt", "w") as f:
             f.write(str(failed_images))
         if stop_on_fail:
             preview_circle(original_image, x, y, r)
-        continue
+        #continue
+        x, y, r = 0, 0, 1000000
     
     print (f"Done {img_index+1:0000}/{len(image_list)}, {img_fname}, Best score={score}")
     #plt_scores = scores.reshape(ms_shape)
