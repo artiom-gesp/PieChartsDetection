@@ -1,0 +1,7 @@
+## Percentage generation algorithm
+
+In this section, we will describe how we transform the output of our model into the percentages required for evaluation. As described previously, our model outputs a 3-element probability distribution for each pixel - 1 layer for the background, another one for the pie chart center, and finally one for the segment boundary ends.
+
+We start by identifying the center - we take the 2D image the model outputs and remove all points above a certain threshold. We consider their positions in the 2D space and average their positions - this will give us our estimate of the pie chart center. We continue by finding key points on the pie chart outer edge - we take the texture from our model, once again keep all points above a threshold. After that we apply a simplified version of the non-max suppression operation, merging all points that are close enough to one another.
+
+When we have the point and the center, we simply start with a zero angle at the top of the circle. We continue clockwise, and if at any time we find a boundary keypoint, we save the angle. Afterwards we assign the percentages to be directy proportional to the angle distances between consecutive points. If for whatever reason our model fails to assign a percentage to a pie chart, leaving it empty or with one element only, we assign the percentage to one hundred.
